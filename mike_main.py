@@ -8,11 +8,12 @@ from torch.utils.data import DataLoader
 import auraloss
 import sys
 import pytorch_lightning as L
+import pytorch_lightning.loggers as Loggers
 from nvsr_unet import NVSR
 import numpy as np
 from auraloss.freq import MultiResolutionSTFTLoss
 from dataset import DistanceDataModule, DAY_1_FOLDER, DAY_2_FOLDER
-
+logger = Loggers.CSVLogger("logs", name="my_exp_name")
 
 def to_log(input):
     assert torch.sum(input < 0) == 0, (
@@ -50,5 +51,5 @@ if __name__ == "__main__":
         DAY_1_FOLDER, DAY_2_FOLDER, chunk_length=32768, num_workers=24
     )
 
-    trainer = L.Trainer(max_epochs=20)
+    trainer = L.Trainer(max_epochs=20, logger=logger)
     trainer.fit(model, datamodule=datamodule)
