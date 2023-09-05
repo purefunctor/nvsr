@@ -63,6 +63,6 @@ torchmetrics==1.1.1
 tqdm==4.66.1
 typing_extensions==4.7.1
 urllib3==2.0.4
-voicefixer==0.0.17
+voicefixer
 Wave==0.0.2
 yarl==1.9.2
