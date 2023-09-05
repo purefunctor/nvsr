@@ -150,6 +150,7 @@ class NVSR(pl.LightningModule):
         out, _ = trim_center(out, x)
         # for l in self.loss.stft_losses:
         #     l.window = l.window.to("cuda:0")
+        print(out.device, y.device)
         loss = self.loss(out, y)
         self.log("training_loss", loss)
         return loss
@@ -163,6 +164,7 @@ class NVSR(pl.LightningModule):
         out, _ = trim_center(out, x)
         # for l in self.loss.stft_losses:
         #     l.window = l.window.to("cuda:0")
+        print(out.device, y.device)
         loss = self.loss(out, y)
         self.log("training_loss", loss)
         return loss
