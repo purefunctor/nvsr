@@ -146,10 +146,10 @@ class NVSR(pl.LightningModule):
         _, mel = self.pre(x)
         out = self(mel)
         mel2 = from_log(out["mel"])
-        out = self.vocoder(mel2, cuda=False)
+        out = self.vocoder(mel2)
         out, _ = trim_center(out, x)
-        for l in self.loss.stft_losses:
-            l.window = l.window.to("cuda:0")
+        # for l in self.loss.stft_losses:
+        #     l.window = l.window.to("cuda:0")
         loss = self.loss(out, y)
         self.log("training_loss", loss)
         return loss
@@ -159,10 +159,10 @@ class NVSR(pl.LightningModule):
         _, mel = self.pre(x)
         out = self(mel)
         mel2 = from_log(out["mel"])
-        out = self.vocoder(mel2, cuda=False)
+        out = self.vocoder(mel2)
         out, _ = trim_center(out, x)
-        for l in self.loss.stft_losses:
-            l.window = l.window.to("cuda:0")
+        # for l in self.loss.stft_losses:
+        #     l.window = l.window.to("cuda:0")
         loss = self.loss(out, y)
         self.log("training_loss", loss)
         return loss
