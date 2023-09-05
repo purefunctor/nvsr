@@ -15,6 +15,43 @@ import numpy as np
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
+EPS = 1e-9
+
+def to_log(input):
+    assert torch.sum(input < 0) == 0, (
+        str(input) + " has negative values counts " + str(torch.sum(input < 0))
+    )
+    return torch.log10(torch.clip(input, min=1e-8))
+
+def from_log(input):
+    input = torch.clip(input, min=-np.inf, max=5)
+    return 10**input
+
+def trim_center(est, ref):
+    diff = np.abs(est.shape[-1] - ref.shape[-1])
+    if est.shape[-1] == ref.shape[-1]:
+        return est, ref
+    elif est.shape[-1] > ref.shape[-1]:
+        min_len = min(est.shape[-1], ref.shape[-1])
+        est, ref = est[..., int(diff // 2) : -int(diff // 2)], ref
+        est, ref = est[..., :min_len], ref[..., :min_len]
+        return est, ref
+    else:
+        min_len = min(est.shape[-1], ref.shape[-1])
+        est, ref = est, ref[..., int(diff // 2) : -int(diff // 2)]
+        est, ref = est[..., :min_len], ref[..., :min_len]
+        return est, ref
+
+
+def get_n_params(model):
+    pp = 0
+    for p in list(model.parameters()):
+        nn = 1
+        for s in list(p.size()):
+            nn = nn * s
+        pp += nn
+    return pp
+
 
 class BN_GRU(torch.nn.Module):
     def __init__(
@@ -176,6 +213,32 @@ class BN_GRU(torch.nn.Module):
             inputs = self.bn(inputs)
         out, _ = self.gru(inputs.squeeze(1))
         return out.unsqueeze(1)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
+        return optimizer
+
+    def training_step(self, train_batch, batch_idx):
+        x, y = train_batch
+        _, mel = self.pre(x)
+        out = self(mel)
+        mel2 = from_log(out["mel"])
+        out = self.vocoder(mel2, cuda=False)
+        out, _ = trim_center(out, x)
+        loss = self.loss(out, y)
+        self.log("training_loss", loss)
+        return loss
+
+    def validation_step(self, val_batch, batch_idx):
+        x, y = val_batch
+        _, mel = self.pre(x)
+        out = self(mel)
+        mel2 = from_log(out["mel"])
+        out = self.vocoder(mel2, cuda=False)
+        out, _ = trim_center(out, x)
+        loss = self.loss(out, y)
+        self.log("training_loss", loss)
+        return loss
 
 
 class Generator(nn.Module):

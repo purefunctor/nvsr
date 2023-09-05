@@ -42,41 +42,10 @@ def trim_center(est, ref):
         return est, ref
 
 
-class NVSRMike(NVSR):
-    def __init__(self, channels):
-        super(NVSRMike, self).__init__(channels)
-
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
-        return optimizer
-
-    def training_step(self, train_batch, batch_idx) -> STEP_OUTPUT:
-        x, y = train_batch
-        _, mel = self.pre(x)
-        out = self(mel)
-        mel2 = from_log(out["mel"])
-        out = self.vocoder(mel2, cuda=False)
-        out, _ = trim_center(out, x)
-        loss = self.loss(out, y)
-        self.log("training_loss", loss)
-        return loss
-
-    def validation_step(self, val_batch, batch_idx) -> STEP_OUTPUT:
-        x, y = val_batch
-        _, mel = self.pre(x)
-        out = self(mel)
-        mel2 = from_log(out["mel"])
-        out = self.vocoder(mel2, cuda=False)
-        out, _ = trim_center(out, x)
-        loss = self.loss(out, y)
-        self.log("training_loss", loss)
-        return loss
-
-
 if __name__ == "__main__":
     torch.set_float32_matmul_precision("high")
 
-    model = NVSRMike(1)
+    model = NVSR(1)
     datamodule = DistanceDataModule(
         DAY_1_FOLDER, DAY_2_FOLDER, chunk_length=32768, num_workers=24
     )
