@@ -90,6 +90,6 @@ class AudioDataModule(L.LightningDataModule):
 
 if __name__ == "__main__":
     model = NVSRMike(1)
-    trainer = L.Trainer(accelerator="cpu")
+    trainer = L.Trainer()
     dm = AudioDataModule(batch_size=32)
     trainer.fit(model, dm)
