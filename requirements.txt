@@ -58,7 +58,7 @@ threadpoolctl==3.2.0
 tifffile==2023.8.30
 torch==2.0.1
 torchaudio==2.0.2
-torchlibrosa==0.0.7
+torchlibrosa==0.1.0
 torchmetrics==1.1.1
 tqdm==4.66.1
 typing_extensions==4.7.1
