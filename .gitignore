@@ -1,0 +1,8 @@
+87_near.wav
+87_far.wav
+.venv
+results
+lightning_logs
+datasets
+__pycache__
+temp.wav
