@@ -45,7 +45,9 @@ def trim_center(est, ref):
 class NVSRMike(NVSR):
     def __init__(self, channels):
         super(NVSRMike, self).__init__(channels)
-        self.loss = MultiResolutionSTFTLoss(device="cuda:0")
+        self.loss = MultiResolutionSTFTLoss()
+        for l in self.loss.stft_losses:
+            l.window = l.window.to("cuda:0")
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
