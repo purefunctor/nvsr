@@ -15,7 +15,7 @@ class AudioDataset(Dataset):
         WO = torchaudio.info(O)
         print(WI,WO)
         self.min_l = min(WI.num_frames, WO.num_frames)
-        self.CHUNK = 2048
+        self.CHUNK = 2 << 14
 
 
     def __len__(self):
