@@ -54,6 +54,8 @@ class NVSRMike(NVSR):
         return optimizer
 
     def training_step(self, train_batch, batch_idx) -> STEP_OUTPUT:
+        for l in self.loss.stft_losses:
+            l.window = l.window.to("cuda:0")
         x, y = train_batch
         _, mel = self.pre(x)
         out = self(mel)
