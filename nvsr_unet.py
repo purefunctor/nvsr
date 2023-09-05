@@ -2,6 +2,7 @@ import sys
 
 sys.path.append("/vol/research/dcase2022/sr_eval_vctk/testees")
 
+from auraloss.freq import MultiResolutionSTFTLoss
 import torch.utils
 import torch.nn as nn
 import torch.utils.data
@@ -79,6 +80,8 @@ class NVSR(pl.LightningModule):
         self.vocoder = Vocoder(sample_rate=44100)
 
         self.downsample_ratio = 2**6  # This number equals 2^{#encoder_blcoks}
+
+        self.loss = MultiResolutionSTFTLoss()
 
         self.f_helper = FDomainHelper(
             window_size=2048,
