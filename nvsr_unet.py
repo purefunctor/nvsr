@@ -136,6 +136,33 @@ class NVSR(pl.LightningModule):
         # print(get_n_params(self.vocoder))
         # print(get_n_params(self.generator))
 
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
+        return optimizer
+
+    def training_step(self, train_batch, batch_idx):
+        x, y = train_batch
+        _, mel = self.pre(x)
+        out = self(mel)
+        mel2 = from_log(out["mel"])
+        out = self.vocoder(mel2, cuda=False)
+        out, _ = trim_center(out, x)
+        loss = self.loss(out, y)
+        self.log("training_loss", loss)
+        return loss
+
+    def validation_step(self, val_batch, batch_idx):
+        x, y = val_batch
+        _, mel = self.pre(x)
+        out = self(mel)
+        mel2 = from_log(out["mel"])
+        out = self.vocoder(mel2, cuda=False)
+        out, _ = trim_center(out, x)
+        loss = self.loss(out, y)
+        self.log("training_loss", loss)
+        return loss
+
     def get_vocoder(self):
         return self.vocoder
 
@@ -213,32 +240,6 @@ class BN_GRU(torch.nn.Module):
             inputs = self.bn(inputs)
         out, _ = self.gru(inputs.squeeze(1))
         return out.unsqueeze(1)
-
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
-        return optimizer
-
-    def training_step(self, train_batch, batch_idx):
-        x, y = train_batch
-        _, mel = self.pre(x)
-        out = self(mel)
-        mel2 = from_log(out["mel"])
-        out = self.vocoder(mel2, cuda=False)
-        out, _ = trim_center(out, x)
-        loss = self.loss(out, y)
-        self.log("training_loss", loss)
-        return loss
-
-    def validation_step(self, val_batch, batch_idx):
-        x, y = val_batch
-        _, mel = self.pre(x)
-        out = self(mel)
-        mel2 = from_log(out["mel"])
-        out = self.vocoder(mel2, cuda=False)
-        out, _ = trim_center(out, x)
-        loss = self.loss(out, y)
-        self.log("training_loss", loss)
-        return loss
 
 
 class Generator(nn.Module):
