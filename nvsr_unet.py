@@ -17,15 +17,18 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 EPS = 1e-9
 
+
 def to_log(input):
     assert torch.sum(input < 0) == 0, (
         str(input) + " has negative values counts " + str(torch.sum(input < 0))
     )
     return torch.log10(torch.clip(input, min=1e-8))
 
+
 def from_log(input):
     input = torch.clip(input, min=-np.inf, max=5)
     return 10**input
+
 
 def trim_center(est, ref):
     diff = np.abs(est.shape[-1] - ref.shape[-1])
@@ -136,7 +139,6 @@ class NVSR(pl.LightningModule):
         # print(get_n_params(self.vocoder))
         # print(get_n_params(self.generator))
 
-
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
         return optimizer
@@ -148,9 +150,17 @@ class NVSR(pl.LightningModule):
         mel2 = from_log(out["mel"])
         out = self.vocoder(mel2, cuda=False)
         out, _ = trim_center(out, x)
-        out = out.to('cuda:0')
+        out = out.to("cuda:0")
         loss = self.loss(out, y)
-        self.log("training_loss", loss)
+        self.log(
+            "train_loss",
+            loss,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True,
+            sync_dist=True,
+        )
         return loss
 
     def validation_step(self, val_batch, batch_idx):
@@ -160,9 +170,17 @@ class NVSR(pl.LightningModule):
         mel2 = from_log(out["mel"])
         out = self.vocoder(mel2, cuda=False)
         out, _ = trim_center(out, x)
-        out = out.to('cuda:0')
+        out = out.to("cuda:0")
         loss = self.loss(out, y)
-        self.log("training_loss", loss)
+        self.log(
+            "val_loss",
+            loss,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True,
+            sync_dist=True,
+        )
         return loss
 
     def get_vocoder(self):
