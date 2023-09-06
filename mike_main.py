@@ -3,15 +3,12 @@ from typing import Any
 import librosa
 from pytorch_lightning.utilities.types import STEP_OUTPUT, TRAIN_DATALOADERS
 import torch
-import os
 from torch.utils.data import DataLoader
-import auraloss
-import sys
 import pytorch_lightning as L
 import pytorch_lightning.loggers as Loggers
 from nvsr_unet import NVSR
 import numpy as np
-from auraloss.freq import MultiResolutionSTFTLoss
+from aurahack.freq import MultiResolutionSTFTLoss
 from dataset import DistanceDataModule, DAY_1_FOLDER, DAY_2_FOLDER
 logger = Loggers.WandbLogger(project="audio-nvsr")
 

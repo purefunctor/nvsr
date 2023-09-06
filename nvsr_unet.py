@@ -117,7 +117,7 @@ class NVSR(pl.LightningModule):
 
         self.channels = channels
 
-        self.vocoder = Vocoder(sample_rate=44100)
+        # self.vocoder = Vocoder(sample_rate=44100)
 
         self.downsample_ratio = 2**6  # This number equals 2^{#encoder_blcoks}
 
@@ -147,10 +147,10 @@ class NVSR(pl.LightningModule):
         x, y = train_batch
         _, mel = self.pre(x)
         out = self(mel)
-        mel2 = from_log(out["mel"])
-        out = self.vocoder(mel2, cuda=False)
+        out = from_log(out["mel"])
+        # out = self.vocoder(mel2, cuda=False)
         out, _ = trim_center(out, x)
-        out = out.to("cuda:0")
+        # out = out.to("cuda:0")
         loss = self.loss(out, y)
         self.log(
             "train_loss",
@@ -167,10 +167,10 @@ class NVSR(pl.LightningModule):
         x, y = val_batch
         _, mel = self.pre(x)
         out = self(mel)
-        mel2 = from_log(out["mel"])
-        out = self.vocoder(mel2, cuda=False)
+        put = from_log(out["mel"])
+        # out = self.vocoder(mel2, cuda=False)
         out, _ = trim_center(out, x)
-        out = out.to("cuda:0")
+        # out = out.to("cuda:0")
         loss = self.loss(out, y)
         self.log(
             "val_loss",
