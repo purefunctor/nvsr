@@ -13,7 +13,7 @@ from nvsr_unet import NVSR
 import numpy as np
 from auraloss.freq import MultiResolutionSTFTLoss
 from dataset import DistanceDataModule, DAY_1_FOLDER, DAY_2_FOLDER
-logger = Loggers.CSVLogger("logs", name="my_exp_name")
+logger = Loggers.WandbLogger(project="audio-nvsr")
 
 def to_log(input):
     assert torch.sum(input < 0) == 0, (
