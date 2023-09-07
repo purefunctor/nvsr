@@ -121,7 +121,7 @@ class NVSR(pl.LightningModule):
 
         self.downsample_ratio = 2**6  # This number equals 2^{#encoder_blcoks}
 
-        self.loss = nn.MSELoss() # MultiResolutionSTFTLoss()
+        self.loss = nn.L1Loss() # MultiResolutionSTFTLoss()
 
         self.f_helper = FDomainHelper(
             window_size=2048,
