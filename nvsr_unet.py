@@ -6,7 +6,7 @@ from auraloss.freq import MultiResolutionSTFTLoss
 import torch.utils
 import torch.nn as nn
 import torch.utils.data
-from voicefixer import Vocoder
+# from voicefixer import Vocoder
 import os
 import pytorch_lightning as pl
 from fDomainHelper import FDomainHelper
@@ -117,7 +117,7 @@ class NVSR(pl.LightningModule):
 
         self.channels = channels
 
-        self.vocoder = Vocoder(sample_rate=44100)
+        # self.vocoder = Vocoder(sample_rate=44100)
 
         self.downsample_ratio = 2**6  # This number equals 2^{#encoder_blcoks}
 
@@ -185,8 +185,8 @@ class NVSR(pl.LightningModule):
         )
         return loss
 
-    def get_vocoder(self):
-        return self.vocoder
+    # def get_vocoder(self):
+    #     return self.vocoder
 
     def get_f_helper(self):
         return self.f_helper
