@@ -50,6 +50,7 @@ class STFTMagnitudeLoss(torch.nn.Module):
 
 
 def magphase(x_stft, eps):
+    print("XSTFT", x_stft.dtype, x_stft.shape)
     x_mag = torch.sqrt(
         torch.clamp((x_stft.real**2) + (x_stft.imag**2), min=eps)
     )
@@ -211,7 +212,7 @@ class STFTLoss(torch.nn.Module):
         return magphase(x_stft, self.eps)
 
     def forward(self, input: torch.Tensor, target: torch.Tensor):
-        bs, chs, seq_len = input.size()
+        bs, chs, seq_len = target.size()
 
         if self.perceptual_weighting:  # apply optional A-weighting via FIR filter
             raise ValueError("Perceptual weighting not supported yet for this hack")

@@ -117,11 +117,11 @@ class NVSR(pl.LightningModule):
 
         self.channels = channels
 
-        # self.vocoder = Vocoder(sample_rate=44100)
+        self.vocoder = Vocoder(sample_rate=44100)
 
         self.downsample_ratio = 2**6  # This number equals 2^{#encoder_blcoks}
 
-        self.loss = MultiResolutionSTFTLoss()
+        self.loss = nn.MSELoss() # MultiResolutionSTFTLoss()
 
         self.f_helper = FDomainHelper(
             window_size=2048,
@@ -148,9 +148,10 @@ class NVSR(pl.LightningModule):
         _, mel = self.pre(x)
         out = self(mel)
         out = from_log(out["mel"])
-        # out = self.vocoder(mel2, cuda=False)
+        #out = self.vocoder(out, cuda=False)
         out, _ = trim_center(out, x)
-        # out = out.to("cuda:0")
+        #out = out.to("cuda:0")
+        _, y = self.pre(y)
         loss = self.loss(out, y)
         self.log(
             "train_loss",
@@ -167,10 +168,11 @@ class NVSR(pl.LightningModule):
         x, y = val_batch
         _, mel = self.pre(x)
         out = self(mel)
-        put = from_log(out["mel"])
-        # out = self.vocoder(mel2, cuda=False)
+        out = from_log(out["mel"])
+        #out = self.vocoder(out, cuda=False)
         out, _ = trim_center(out, x)
-        # out = out.to("cuda:0")
+        #out = out.to("cuda:0")
+        _, y = self.pre(y)
         loss = self.loss(out, y)
         self.log(
             "val_loss",
