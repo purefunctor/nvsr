@@ -172,41 +172,42 @@ class DistanceDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
 
     def setup(self, stage: str):
-        training_dataset = [
-            RecordingDataset(
-                self.day_1_path,
-                {"67": "269", "87": "87", "103": "103"},
-                near_is_input=self.near_is_input,
-                chunk_length=self.chunk_length,
-                prefix="day_1",
-            ),
-            RecordingDataset(
-                self.day_2_path,
-                {"67": "269", "87": "87", "103": "103"},
-                near_is_input=self.near_is_input,
-                chunk_length=self.chunk_length,
-                prefix="day_2",
-            ),
-        ]
-        self.training_dataset = ConcatDataset(training_dataset)
-
-        validation_dataset = [
-            RecordingDataset(
-                self.day_1_path,
-                {"414": "414"},
-                near_is_input=self.near_is_input,
-                chunk_length=self.chunk_length,
-                prefix="day_1",
-            ),
-            RecordingDataset(
-                self.day_2_path,
-                {"414": "414"},
-                near_is_input=self.near_is_input,
-                chunk_length=self.chunk_length,
-                prefix="day_2",
-            ),
-        ]
-        self.validation_dataset = ConcatDataset(validation_dataset)
+        if stage == "fit":
+            training_dataset = [
+                RecordingDataset(
+                    self.day_1_path,
+                    {"67": "269", "87": "87", "103": "103"},
+                    near_is_input=self.near_is_input,
+                    chunk_length=self.chunk_length,
+                    prefix="day_1",
+                ),
+                RecordingDataset(
+                    self.day_2_path,
+                    {"67": "269", "87": "87", "103": "103"},
+                    near_is_input=self.near_is_input,
+                    chunk_length=self.chunk_length,
+                    prefix="day_2",
+                ),
+            ]
+            self.training_dataset = ConcatDataset(training_dataset)
+        if stage == "validate":
+            validation_dataset = [
+                RecordingDataset(
+                    self.day_1_path,
+                    {"414": "414"},
+                    near_is_input=self.near_is_input,
+                    chunk_length=self.chunk_length,
+                    prefix="day_1",
+                ),
+                RecordingDataset(
+                    self.day_2_path,
+                    {"414": "414"},
+                    near_is_input=self.near_is_input,
+                    chunk_length=self.chunk_length,
+                    prefix="day_2",
+                ),
+            ]
+            self.validation_dataset = ConcatDataset(validation_dataset)
 
     def train_dataloader(self):
         return DataLoader(
@@ -222,7 +223,12 @@ class DistanceDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
         )
-
+    def predict_dataloader(self):
+        return DataLoader(
+            self.validation_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+        )
 
 if __name__ == "__main__":
     per_second = RecordingDataset(

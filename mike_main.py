@@ -14,33 +14,6 @@ logger = Loggers.WandbLogger(project="audio-nvsr", log_model="all")
 model_checkpoint = Cb.ModelCheckpoint(dirpath="logs", save_top_k=-1)
 trainer = L.Trainer(logger=logger, max_epochs=2, callbacks=[model_checkpoint])
 
-def to_log(input):
-    assert torch.sum(input < 0) == 0, (
-        str(input) + " has negative values counts " + str(torch.sum(input < 0))
-    )
-    return torch.log10(torch.clip(input, min=1e-8))
-
-
-def from_log(input):
-    input = torch.clip(input, min=-np.inf, max=5)
-    return 10**input
-
-
-def trim_center(est, ref):
-    diff = np.abs(est.shape[-1] - ref.shape[-1])
-    if est.shape[-1] == ref.shape[-1]:
-        return est, ref
-    elif est.shape[-1] > ref.shape[-1]:
-        min_len = min(est.shape[-1], ref.shape[-1])
-        est, ref = est[..., int(diff // 2) : -int(diff // 2)], ref
-        est, ref = est[..., :min_len], ref[..., :min_len]
-        return est, ref
-    else:
-        min_len = min(est.shape[-1], ref.shape[-1])
-        est, ref = est, ref[..., int(diff // 2) : -int(diff // 2)]
-        est, ref = est[..., :min_len], ref[..., :min_len]
-        return est, ref
-
 
 if __name__ == "__main__":
     torch.set_float32_matmul_precision("high")

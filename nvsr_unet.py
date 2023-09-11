@@ -4,9 +4,9 @@ sys.path.append("/vol/research/dcase2022/sr_eval_vctk/testees")
 
 from auraloss.freq import MultiResolutionSTFTLoss
 import torch.utils
+import librosa
 import torch.nn as nn
 import torch.utils.data
-# from voicefixer import Vocoder
 import os
 import pytorch_lightning as pl
 from fDomainHelper import FDomainHelper
@@ -110,14 +110,15 @@ def get_n_params(model):
 
 
 class NVSR(pl.LightningModule):
-    def __init__(self, channels):
+    def __init__(self, channels, vocoder=None):
         super(NVSR, self).__init__()
 
         model_name = "unet"
 
         self.channels = channels
-
-        # self.vocoder = Vocoder(sample_rate=44100)
+        ##### VOICEFIXER
+        self.vocoder = vocoder
+        ##### VOICEFIXER
 
         self.downsample_ratio = 2**6  # This number equals 2^{#encoder_blcoks}
 
@@ -142,6 +143,21 @@ class NVSR(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
         return optimizer
+
+    def predict_step(self, predict_batch, batch_idx):
+        x, _ = predict_batch
+        _, mel = self.pre(x)
+        out = self(mel)
+        out = from_log(out["mel"])
+        out = self.vocoder(out, cuda=False)
+        out, _ = trim_center(out, x)
+        out = out.numpy()
+        out = np.squeeze(out)
+        out = self.postprocessing(np.squeeze(x.numpy()), out)
+        #out = out.to("cuda:0")
+        #_, y = self.pre(y)
+        #loss = self.loss(out, y)
+        return out
 
     def training_step(self, train_batch, batch_idx):
         x, y = train_batch
@@ -207,7 +223,27 @@ class NVSR(pl.LightningModule):
             'sp': (batch_size, channels_num, time_steps, freq_bins)}
         """
         return self.generator(mel_orig)
+    def postprocessing(self, x, out):
+        # Replace the low resolution part with the ground truth
+        length = out.shape[0]
+        cutoffratio = self._get_cutoff_index(x)
+        stft_gt = librosa.stft(x)
+        stft_out = librosa.stft(out)
+        stft_out[:cutoffratio, ...] = stft_gt[:cutoffratio, ...]
+        out_renewed = librosa.istft(stft_out, length=length)
+        return out_renewed
 
+    def _find_cutoff(self, x, threshold=0.95):
+        threshold = x[-1] * threshold
+        for i in range(1, x.shape[0]):
+            if x[-i] < threshold:
+                return x.shape[0] - i
+        return 0
+
+    def _get_cutoff_index(self, x):
+        stft_x = np.abs(librosa.stft(x))
+        energy = np.cumsum(np.sum(stft_x, axis=-1))
+        return self._find_cutoff(energy, 0.97)
 
 def to_log(input):
     assert torch.sum(input < 0) == 0, (

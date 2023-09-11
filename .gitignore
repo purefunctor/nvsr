@@ -6,3 +6,6 @@ lightning_logs
 datasets
 __pycache__
 temp.wav
+model.ckpt
+temp
+wandb
