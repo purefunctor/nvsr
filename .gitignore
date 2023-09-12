@@ -5,7 +5,7 @@ results
 lightning_logs
 datasets
 __pycache__
-temp.wav
-model.ckpt
+*.wav
+*.ckpt
 temp
 wandb

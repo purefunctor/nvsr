@@ -23,18 +23,18 @@ class PredictionDataset(Dataset):
 
     def __getitem__(self, idx):
         X = 32768
-        I, _ = torchaudio.load("/Users/mikesol/Downloads/414_near.wav", frame_offset=idx*X, num_frames=X)
-        O, _ = torchaudio.load("/Users/mikesol/Downloads/414_far.wav", frame_offset=idx*X, num_frames=X)
+        I, _ = torchaudio.load("./nt1_middle.wav", frame_offset=idx*X, num_frames=X)
+        O, _ = torchaudio.load("./67_near.wav", frame_offset=idx*X, num_frames=X)
         return I, O
 
 data_loader = DataLoader(PredictionDataset(), batch_size=1)
 
 if __name__ == "__main__":
     torch.set_float32_matmul_precision("high")
-    model = NVSR.load_from_checkpoint('model.ckpt', map_location=torch.device('cpu'), channels=1)
+    model = NVSR.load_from_checkpoint('model-mic.ckpt', map_location=torch.device('cpu'), channels=1)
     model.vocoder = Vocoder(sample_rate=44100)
     trainer = L.Trainer(accelerator="cpu")
     prediction = trainer.predict(model, data_loader)
     # for x, pred in enumerate(prediction):
     #     torchaudio.save(f"./temp/prediction{x}.wav", torch.from_numpy(pred).unsqueeze(0), 44100)
-    torchaudio.save(f"./temp/prediction.wav", torch.cat([torch.from_numpy(x).unsqueeze(0) for x in prediction],1), 44100)
+    torchaudio.save(f"./temp/prediction-mic.wav", torch.cat([torch.from_numpy(x).unsqueeze(0) for x in prediction],1), 44100)
