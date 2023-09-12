@@ -12,11 +12,64 @@ import pytorch_lightning as pl
 from fDomainHelper import FDomainHelper
 from mel_scale import MelScale
 import numpy as np
+from torchlibrosa import STFT, ISTFT
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 EPS = 1e-9
 
+
+def _find_cutoff(x, threshold=0.95):
+    threshold = x[-1] * threshold
+    for i in range(1, x.shape[0]):
+        if x[-i] < threshold:
+            return x.shape[0] - i
+    return 0
+
+def _get_cutoff_index(x):
+    stft_x = np.abs(librosa.stft(x))
+    energy = np.cumsum(np.sum(stft_x, axis=-1))
+    return _find_cutoff(energy, 0.97)
+
+def postprocessing(x, out):
+    # Replace the low resolution part with the ground truth
+    length = out.shape[0]
+    cutoffratio = _get_cutoff_index(x)
+    stft_gt = librosa.stft(x)
+    stft_out = librosa.stft(out)
+    stft_out[:cutoffratio, ...] = stft_gt[:cutoffratio, ...]
+    out_renewed = librosa.istft(stft_out, length=length)
+    return out_renewed
+
+def _get_cutoff_index2(x):
+    my_stft_real, mystft_imag = STFT()(x)
+    my_stft_real, mystft_imag = ss(my_stft_real), ss(mystft_imag)
+    stft_x = torch.clamp(my_stft_real**2 + mystft_imag**2, EPS, np.inf) ** 0.5
+    stft_x = ss(stft_x).transpose(0,1)
+    energy = torch.cumsum(torch.sum(stft_x, axis=-1), 0)
+    return _find_cutoff(energy, 0.97)
+
+def uu(x):
+    return torch.unsqueeze(x, 0)
+
+def ss(x):
+    return torch.squeeze(x, 0)
+
+def postprocessing2(x, out):
+    # Replace the low resolution part with the ground truth
+    x = uu(x)
+    out = uu(out)
+    length = out.shape[-1]
+    cutoffratio = _get_cutoff_index2(x)
+    stft_gt_real, stft_gt_imag = STFT()(x)
+    stft_out_real, stft_out_imag = STFT()(out)
+    stft_gt_real, stft_gt_imag, stft_out_real, stft_out_imag = ss(stft_gt_real), ss(stft_gt_imag), ss(stft_out_real), ss(stft_out_imag)
+    stft_out_real[:cutoffratio, ...] = stft_gt_real[:cutoffratio, ...]
+    stft_out_imag[:cutoffratio, ...] = stft_gt_imag[:cutoffratio, ...]
+    stft_out_real, stft_out_imag = uu(stft_out_real), uu(stft_out_imag)
+    out_renewed = ISTFT()(stft_out_real, stft_out_imag, length=length)
+    out_renewed = ss(out_renewed)
+    return out_renewed
 
 def to_log(input):
     assert torch.sum(input < 0) == 0, (
@@ -153,7 +206,7 @@ class NVSR(pl.LightningModule):
         out, _ = trim_center(out, x)
         out = out.numpy()
         out = np.squeeze(out)
-        out = self.postprocessing(np.squeeze(x.numpy()), out)
+        out = postprocessing(np.squeeze(x.numpy()), out)
         #out = out.to("cuda:0")
         #_, y = self.pre(y)
         #loss = self.loss(out, y)
@@ -223,27 +276,6 @@ class NVSR(pl.LightningModule):
             'sp': (batch_size, channels_num, time_steps, freq_bins)}
         """
         return self.generator(mel_orig)
-    def postprocessing(self, x, out):
-        # Replace the low resolution part with the ground truth
-        length = out.shape[0]
-        cutoffratio = self._get_cutoff_index(x)
-        stft_gt = librosa.stft(x)
-        stft_out = librosa.stft(out)
-        stft_out[:cutoffratio, ...] = stft_gt[:cutoffratio, ...]
-        out_renewed = librosa.istft(stft_out, length=length)
-        return out_renewed
-
-    def _find_cutoff(self, x, threshold=0.95):
-        threshold = x[-1] * threshold
-        for i in range(1, x.shape[0]):
-            if x[-i] < threshold:
-                return x.shape[0] - i
-        return 0
-
-    def _get_cutoff_index(self, x):
-        stft_x = np.abs(librosa.stft(x))
-        energy = np.cumsum(np.sum(stft_x, axis=-1))
-        return self._find_cutoff(energy, 0.97)
 
 def to_log(input):
     assert torch.sum(input < 0) == 0, (
