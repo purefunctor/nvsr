@@ -19,10 +19,10 @@ class PredictionDataset(Dataset):
     def __init__(self):
        pass
     def __len__(self):
-        return 8
+        return 1 << 0
 
     def __getitem__(self, idx):
-        X = 32768
+        X = 1 << 18
         I, _ = torchaudio.load("./nt1_middle.wav", frame_offset=idx*X, num_frames=X)
         O, _ = torchaudio.load("./67_near.wav", frame_offset=idx*X, num_frames=X)
         return I, O
