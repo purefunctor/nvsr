@@ -31,7 +31,7 @@ data_loader = DataLoader(PredictionDataset(), batch_size=1)
 
 if __name__ == "__main__":
     torch.set_float32_matmul_precision("high")
-    model = NVSR.load_from_checkpoint('model-mic.ckpt', map_location=torch.device('cpu'), channels=1)
+    model = NVSR.load_from_checkpoint('checkpoint.ckpt', map_location=torch.device('cpu'), channels=1)
     model.vocoder = Vocoder(sample_rate=44100)
     trainer = L.Trainer(accelerator="cpu")
     prediction = trainer.predict(model, data_loader)
